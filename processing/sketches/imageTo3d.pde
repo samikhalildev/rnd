@@ -1,8 +1,21 @@
-/* @pjs preload="jensen.jpg"; */
+/* @pjs preload="toronto.jpg"; */
+
+/*
+To do:
+  - Lerp to new color on click.
+  - Go to next image.
+*/
 
 PImage img;
 float rotx = 0;
 float roty = 0;
+
+color color1 = color(255);
+color color2 = color(0, 0, 50);
+float maxDepth = 50;
+
+float d = maxDepth;
+float target = maxDepth;
 
 
 void setup() {
@@ -10,24 +23,20 @@ void setup() {
   
   smooth();
   
-  imageMode(CENTER);
-  
-  img = loadImage("jensen.jpg");
+  img = loadImage("toronto.jpg");
+  float scaleValue = 0.6;
+  img.resize(int(img.width*scaleValue), int(img.height*scaleValue));
   img.loadPixels();
 }
 
-color color1 = color(255);
-color color2 = color(0, 0, 50);
-float maxDepth = 50;
 
 void draw() {
   background(255);
   
   translate(width/2, height/2);
   
-  rotateY(radians(frameCount*0.5));
-  //rotateX(rotx);
-  //rotateY(roty);
+  rotateX(rotx);
+  rotateY(roty);
   
   int i = 0;
   
@@ -38,7 +47,7 @@ void draw() {
         
         float brightValue = brightness(pixelColor);
         
-        float z = map(brightValue, 0, 255, maxDepth, 0);
+        float z = map(brightValue, 0, 255, d, maxDepth-d);
         
         color pointColor = lerpColor(color1, color2, z/maxDepth);
         
@@ -46,19 +55,27 @@ void draw() {
         strokeWeight(map(z, 0, maxDepth, 1, 3));
         
         point(x-img.width/2, y-img.height/2, z);
-        
-        color reflectionColor = color(red(pointColor), green(pointColor), blue(pointColor), map(y, 0, img.height, 0, 50));
-        stroke(reflectionColor);
-        point(x-img.width/2, -y+img.height/2+img.height, z);
       }
       
       i += 1;
     }
   }
+  
+  d = lerp(d, target, 0.1);
 }
 
+
 void mouseMoved() {
-  maxDepth = map(mouseX, 0, width, 0, 100);
-  //rotx = map(mouseY, 0, height, radians(180), radians(-180));
-  //roty = map(mouseX, 0, width, radians(-180), radians(180));
+  //maxDepth = map(mouseX, 0, width, 0, 100);
+  rotx = map(mouseY, 0, height, radians(180), radians(-180));
+  roty = map(mouseX, 0, width, radians(-180), radians(180));
+}
+
+
+void mousePressed() {
+  if (target == 0) {
+    target = maxDepth;
+  } else {
+    target = 0;
+  }
 }
