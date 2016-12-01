@@ -1,85 +1,130 @@
-/* @pjs preload="singapore.jpg", "up.jpg", "mochi.jpg"; */
+/* @pjs preload="portrait1.jpg", "portrait2.jpg", "portrait3.jpg"; */
 
+/*
+Portrait painter
+
+Controls:
+  - Mouse click to switch to the next image.
+
+Author:
+  Jason Labbe
+
+Site:
+  jasonlabbe3d.com
+*/
+
+String[] imgNames = {"portrait1.jpg", "portrait2.jpg", "portrait3.jpg"};
 PImage img;
-int pixelSteps = 20;
+int imgIndex = 0;
 
-void drawCurve(float curveLength, color strokeColor, int weightValue) {
-  float stepLength = curveLength/4.0;
+
+void nextImage() {
+  background(255);
+  loop();
+  frameCount = 0;
   
-  float a = random(-curveLength, curveLength);
-  float b = random(-curveLength, curveLength);
+  img = loadImage(imgNames[imgIndex]);
+  img.loadPixels();
   
+  imgIndex += 1;
+  
+  if (imgIndex >= imgNames.length) {
+    imgIndex = 0;
+  }
+}
+
+
+void paintStroke(float strokeLength, color strokeColor, int strokeWeight) {
+  float stepLength = strokeLength/4.0;
+  
+  // Determines if the stroke is curved. A straight line is 0.
+  float tangent1 = 0;
+  float tangent2 = 0;
+  
+  float odds = random(1.0);
+  
+  if (odds < 0.7) {
+    tangent1 = random(-strokeLength, strokeLength);
+    tangent2 = random(-strokeLength, strokeLength);
+  } 
+  
+  // Draw a big stroke
   noFill();
   stroke(strokeColor);
-  strokeWeight(weightValue);
-  curve(a, -stepLength*2, 0, -stepLength*1, 0, stepLength*1, b, stepLength*2);
+  strokeWeight(strokeWeight);
+  curve(tangent1, -stepLength*2, 0, -stepLength, 0, stepLength, tangent2, stepLength*2);
   
-  strokeWeight(1);
-  int z = 1;
+  int x = 1;
   
-  for (int x = weightValue; x > 0; x --) {
-    float v = random(10, 50);
-    color newColor = color(red(strokeColor)-v, green(strokeColor)-v, blue(strokeColor)-v, 150);
-    stroke(newColor);
+  // Draw stroke's details
+  for (int num = strokeWeight; num > 0; num --) {
+    float offset = random(-50, 25);
+    color newColor = color(red(strokeColor)+offset, green(strokeColor)+offset, blue(strokeColor)+offset, random(100, 255));
     
-    curve(a, -stepLength*2, z-weightValue/2, -stepLength*random(0.9, 1.1), z-weightValue/2, stepLength*random(0.9, 1.1), b, stepLength*2);
-    z += 1;
+    stroke(newColor);
+    strokeWeight((int)random(0, 3));
+    curve(tangent1, -stepLength*2, x-strokeWeight/2, -stepLength*random(0.9, 1.1), x-strokeWeight/2, stepLength*random(0.9, 1.1), tangent2, stepLength*2);
+    
+    x += 1;
   }
 }
+
 
 void setup() {
-  size(900, 800);
+  size(950, 700);
   
-  background(255);
-  
-  img = loadImage("white.jpg");
-  img.loadPixels();
+  nextImage();
 }
 
+
 void draw() {
-  if (frameCount > 600) {
-    return;
-  }
-  
   translate(width/2, height/2);
   
-  int i = 0;
+  int index = 0;
   
   for (int y = 0; y < img.height; y+=1) {
     for (int x = 0; x < img.width; x+=1) {
-      int p = (int)random(20000);
+      int odds = (int)random(20000);
       
-      if (p < 1) {
-        color pixelColor = img.pixels[i];
+      if (odds < 1) {
+        color pixelColor = img.pixels[index];
         pixelColor = color(red(pixelColor), green(pixelColor), blue(pixelColor), 100);
         
         pushMatrix();
         translate(x-img.width/2, y-img.height/2);
         rotate(radians(random(-90, 90)));
         
+        // Paint by layers from rough strokes to finer details
         if (frameCount < 20) {
           // Big rough strokes
-          drawCurve(random(150, 250), pixelColor, (int)random(20, 40));
+          paintStroke(random(150, 250), pixelColor, (int)random(20, 40));
         } else if (frameCount < 50) {
           // Thick strokes
-          drawCurve(random(75, 125), pixelColor, (int)random(8, 12));
+          paintStroke(random(75, 125), pixelColor, (int)random(8, 12));
         } else if (frameCount < 300) {
           // Small strokes
-          drawCurve(random(30, 60), pixelColor, (int)random(1, 4));
+          paintStroke(random(30, 60), pixelColor, (int)random(1, 4));
         } else if (frameCount < 350) {
           // Big dots
-          drawCurve(random(5, 20), pixelColor, (int)random(5, 15));
+          paintStroke(random(5, 20), pixelColor, (int)random(5, 15));
         } else if (frameCount < 600) {
           // Small dots
-          drawCurve(random(1, 10), pixelColor, (int)random(1, 7));
+          paintStroke(random(1, 10), pixelColor, (int)random(1, 7));
         }
-        
-        //drawCurve(max(10, (int)map(frameCount, 0, 300, 200, 10)), pixelColor, (int)map(frameCount, 0, 400, 10, 1));
         
         popMatrix();
       }
       
-      i += 1;
+      index += 1;
     }
   }
+  
+  if (frameCount > 600) {
+    noLoop();
+  }
+}
+
+
+void mousePressed() {
+  nextImage();
 }
