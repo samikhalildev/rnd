@@ -1,13 +1,24 @@
 PImage img;
 ArrayList<Blob> blobs = new ArrayList<Blob>();
-float brightThreshold = 80;
-float distanceThreshold = 20;
-ArrayList<float[]> colors = new ArrayList<float[]>();
 
+ArrayList<float[]> colors = new ArrayList<float[]>();
+int[][] colorIndexes;
+int[][] processed;
 
 class Blob {
   color blobColor;
   ArrayList<PVector> points = new ArrayList<PVector>();
+}
+
+
+class Coords {
+  float x;
+  float y;
+  
+  Coords(float _x, float _y) {
+    this.x = _x;
+    this.y = _y;
+  }
 }
 
 
@@ -23,9 +34,11 @@ float distSquared(float x1, float y1, float x2, float y2) {
   return (x2-x1)*(x2-x1) + (y2-y1)*(y2-y1);
 }
 
+
 float distSquared(float x1, float y1, float z1, float x2, float y2, float z2) {
   return (x2-x1)*(x2-x1) + (y2-y1)*(y2-y1) + (z2-z1)*(z2-z1);
 }
+
 
 // Forces pixels to their closest color
 void saturateImage(PImage pImg, int steps) {  
@@ -62,6 +75,7 @@ void saturateImage(PImage pImg, int steps) {
       float[] colorChamp = colors.get(recordIndex);
       color useColor = color(colorChamp[0], colorChamp[1], colorChamp[2]);
       
+      colorIndexes[x][y] = recordIndex;
       pImg.pixels[index] = color(255, 0, 0);
       
       // Un-comment to display
@@ -73,6 +87,7 @@ void saturateImage(PImage pImg, int steps) {
   
   img.updatePixels();
 }
+
 
 void setup() {
   size(950, 700);
@@ -91,16 +106,35 @@ void setup() {
   img = loadImage("portrait1.jpg");
   img.loadPixels();
   
+  colorIndexes = new int[img.width][img.height];
+  
   saturateImage(img, 3);
   
-  int[][] processed = new int[width][height];
+  processed = new int[img.width][img.height];
   
   for (int y = 0; y < img.height; y+=3) {
     for (int x = 0; x < img.width; x+=3) {
+      // Skip any pixels that already belong to a blob
+      if (processed[x][y] == 1) {
+        continue;
+      }
+      
       int index = x + y * img.width;
       
-    } 
+      int colorIndex = colorIndexes[x][y];
+      
+      float[] colorValues = colors.get(colorIndex);
+      color currentColor = color(colorValues[0], colorValues[1], colorValues[2]);
+      
+      addBlob(x, y, currentColor);
+      
+      int[][] pixelChecks = {{x-3, y}, {x+3, y}};
+      
+      
+    }
   }
+  
+  println(blobs.size());
 }
 
 
