@@ -1,3 +1,10 @@
+/*
+To do:
+   - Merge small blobs.
+   - Method to get blob by pixel's position.
+   - Clean up code!
+*/
+
 PImage img;
 ArrayList<Blob> blobs = new ArrayList<Blob>();
 
@@ -12,10 +19,10 @@ class Blob {
 
 
 class Coords {
-  float x;
-  float y;
+  int x;
+  int y;
   
-  Coords(float _x, float _y) {
+  Coords(int _x, int _y) {
     this.x = _x;
     this.y = _y;
   }
@@ -63,7 +70,6 @@ void saturateImage(PImage pImg, int steps) {
         if (recordIndex == -1) {
           recordIndex = i;
           recordDist = colorDist;
-          //println(recordDist);
         } else {
           if (colorDist < recordDist) {
             recordIndex = i;
@@ -94,16 +100,50 @@ void setup() {
   
   background(255);
   
-  colors.add(new float[] {127, 0, 0}); // red
-  colors.add(new float[] {0, 127, 0}); // green
-  colors.add(new float[] {0, 0, 127}); // blue
-  colors.add(new float[] {127, 127, 0}); // yellow
-  colors.add(new float[] {127, 50, 0}); // orange
-  colors.add(new float[] {127, 0, 127}); // purple
-  colors.add(new float[] {-25, -25, -25}); // black
-  colors.add(new float[] {280, 280, 280}); // white
+  int method = 1;
   
-  img = loadImage("portrait1.jpg");
+  if (method == 1) {
+    int totalSteps = 6;
+    for (int i = 0; i < totalSteps; i++) {
+      float hue = map(i, 0, totalSteps, 0, 360);
+      
+      colorMode(HSB, 360);
+      color newColor1 = color(hue, 360, 360);
+      color newColor2 = color(hue, 360, 180);
+      color newColor3 = color(hue, 360, 90);
+      colorMode(RGB, 255);
+      
+      colors.add(new float[] {red(newColor1), green(newColor1), blue(newColor1)});
+      colors.add(new float[] {red(newColor2), green(newColor2), blue(newColor2)});
+      colors.add(new float[] {red(newColor3), green(newColor3), blue(newColor3)});
+    }
+    
+    colors.add(new float[] {-25, -25, -25}); // black
+    colors.add(new float[] {280, 280, 280}); // white
+  } else {
+    colors.add(new float[] {128, 0, 0}); // red
+    colors.add(new float[] {128, 43, 0}); // dark orange
+    colors.add(new float[] {128, 85, 0}); // orange
+    colors.add(new float[] {128, 128, 0}); // yellow
+    colors.add(new float[] {85, 128, 0}); // yellow-green
+    colors.add(new float[] {43, 128, 0}); // dark-green
+    colors.add(new float[] {0, 128, 0}); // green
+    colors.add(new float[] {0, 128, 42}); // orange
+    colors.add(new float[] {0, 128, 85}); // orange
+    colors.add(new float[] {0, 128, 128}); // orange
+    colors.add(new float[] {0, 85, 128}); // orange
+    colors.add(new float[] {0, 42, 128}); // orange
+    colors.add(new float[] {0, 0, 128}); // orange
+    colors.add(new float[] {43, 0, 128}); // orange
+    colors.add(new float[] {85, 0, 128}); // orange
+    colors.add(new float[] {128, 0, 128}); // orange
+    colors.add(new float[] {128, 0, 85}); // orange
+    colors.add(new float[] {128, 0, 43}); // orange
+    colors.add(new float[] {-25, -25, -25}); // black
+    colors.add(new float[] {280, 280, 280}); // white
+  }
+  
+  img = loadImage("twaf.jpg");
   img.loadPixels();
   
   colorIndexes = new int[img.width][img.height];
@@ -128,16 +168,97 @@ void setup() {
       
       addBlob(x, y, currentColor);
       
-      int[][] pixelChecks = {{x-3, y}, {x+3, y}};
+      ArrayList<Coords> coordsToResolve = getVertNeighbors(new Coords(x, y), 3);
+      int[][] resolved = new int[img.width][img.height];
+      processed[x][y] = 1;
+      resolved[x][y] = 1;
       
-      
+      while(coordsToResolve.size() > 0) {
+        ArrayList<Coords> newCoords = new ArrayList<Coords>();
+        
+        for (int i = coordsToResolve.size()-1; i > -1; i--) {
+          Coords c = coordsToResolve.get(i);
+          coordsToResolve.remove(i);
+          
+          if (resolved[c.x][c.y] == 0) {
+            if (colorIndexes[c.x][c.y] == colorIndex) {
+              processed[c.x][c.y] = 1;
+              blobs.get(blobs.size()-1).points.add(new PVector(c.x, c.y));
+              
+              ArrayList<Coords> vertNeighbors = getVertNeighbors(c, 3);
+              
+              for (Coords v : vertNeighbors) {
+                if (resolved[v.x][v.y] == 0) {
+                  newCoords.add(v);
+                }
+              }
+            }
+          }
+          
+          resolved[c.x][c.y] = 1;
+        }
+        
+        if (newCoords.size() > 0) {
+          coordsToResolve.addAll(newCoords);
+        }
+      }
     }
   }
   
-  println(blobs.size());
+  
+  //println(blobs.size());
+}
+
+
+ArrayList<Coords> getVertNeighbors(Coords coords, int steps) {
+  Coords upLeft = new Coords(coords.x-steps, coords.y-steps);
+  Coords up = new Coords(coords.x, coords.y-steps);
+  Coords upRight = new Coords(coords.x+steps, coords.y-steps);
+  Coords downLeft = new Coords(coords.x-steps, coords.y+steps);
+  Coords down = new Coords(coords.x, coords.y+steps);
+  Coords downRight = new Coords(coords.x-steps, coords.y+steps);
+  Coords left = new Coords(coords.x-steps, coords.y);
+  Coords right = new Coords(coords.x+steps, coords.y);
+  
+  ArrayList<Coords> finalNeighbors = new ArrayList<Coords>();
+  
+  Coords[] neighbors = {upLeft, up, upRight, downLeft, down, downRight, left, right};
+  
+  for (int i = 0; i < neighbors.length; i++) {
+    if (neighbors[i].x < 0 || neighbors[i].x >= img.width) {
+      continue;
+    }
+    
+    if (neighbors[i].y < 0 || neighbors[i].y >= img.height) {
+      continue;
+    }
+    
+    if (processed[neighbors[i].x][neighbors[i].y] == 1) {
+      continue;
+    }
+    
+    finalNeighbors.add(neighbors[i]);
+  }
+  
+  return finalNeighbors;
 }
 
 
 void draw() {
-  //image(img, 0, 0);
+  /*colorMode(HSB, 360);
+  
+  for (int i = 0; i < blobs.size(); i++) {
+    if (blobs.get(i).points.size() < 20) {
+      continue;
+    }
+    
+    //stroke(map(i, 0, blobs.size(), 0, 360), 255, 255);
+    stroke(random(0, 360), 255, 255);
+    strokeWeight(3);
+    for (PVector p : blobs.get(i).points) {
+      point(p.x, p.y);
+    }
+  }
+  
+  colorMode(RGB, 255);*/
 }
