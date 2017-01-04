@@ -1,5 +1,19 @@
-int spawnCount = 6;
-int splitCount = 4;
+/*
+Waterfall cascades 3d
+
+Controls:
+  - Mouse click to change positions of collision objects.
+  - Move mouse to rotate camera.
+
+Author:
+  Jason Labbe
+
+Site:
+  jasonlabbe3d.com
+*/
+
+int spawnCount = 8;
+int splitCount = 3;
 
 float pMinMass = 2;
 float pMaxMass = 8;
@@ -8,7 +22,7 @@ float cMaxMass = 300;
 
 float waterfallSize = 200;
 
-PVector cameraRot = new PVector(25, -35);
+PVector cameraRot = new PVector(25, 10);
 
 ArrayList<Particle> particles = new ArrayList<Particle>();
 ArrayList<Collision> collisions = new ArrayList<Collision>();
@@ -60,10 +74,13 @@ class Particle {
         float dampening = map(this.mass, pMinMass, pMaxMass, 1, 0.8);
         float mag = this.vel.mag();
         
+        // The further to the center a particle is, the further it will shoot out.
+        float magAddition = min(col.mass/2-distance, 15);
+        
         PVector bounce = new PVector(this.pos.x, this.pos.y, this.pos.z);
         bounce.sub(col.pos);
         bounce.normalize();
-        bounce.mult(mag*friction*dampening);
+        bounce.mult((mag+magAddition)*friction*dampening);
         this.vel = bounce;
         
         if (this.mass > 2) {
@@ -121,9 +138,9 @@ class Collision {
     
     translate(this.pos.x, this.pos.y, this.pos.z);
     
-    strokeWeight(this.mass/2);
     stroke(50);
-    //point(0, 0);
+    fill(20);
+    sphere(this.mass/2);
     
     popMatrix();
   }
@@ -144,6 +161,7 @@ void setup() {
   size(800, 800, P3D);
   
   smooth(0);
+  sphereDetail(12);
   
   for (int i = 0; i < 10; i++) {
     collisions.add(new Collision(0, 0, 0, 1));
@@ -154,7 +172,7 @@ void setup() {
 
 
 void draw() {
-  background(0);
+  background(50);
   
   colorMode(HSB, 360);
   
@@ -165,7 +183,7 @@ void draw() {
     color displayColor;
     
     if (particles.size() % 5 == 0) {
-      displayColor = color(255);
+      displayColor = color(240);
     } else {
       displayColor = color(random(180, 210), 255, 255);
     }
