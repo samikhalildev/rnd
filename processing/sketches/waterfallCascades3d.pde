@@ -12,8 +12,8 @@ Site:
   jasonlabbe3d.com
 */
 
-int spawnCount = 8;
-int splitCount = 3;
+int spawnCount = 10;
+int splitCount = 4;
 
 float pMinMass = 2;
 float pMaxMass = 8;
@@ -139,7 +139,7 @@ class Collision {
     translate(this.pos.x, this.pos.y, this.pos.z);
     
     stroke(50);
-    fill(20);
+    fill(25);
     sphere(this.mass/2);
     
     popMatrix();
@@ -178,7 +178,7 @@ void draw() {
   
   for (int num = 0; num < spawnCount; num++) {
     float x = random(-waterfallSize, waterfallSize);
-    float z = random(-waterfallSize, waterfallSize);
+    float z = random(-waterfallSize/4, waterfallSize/4);
     float mass = random(pMinMass, pMaxMass);
     color displayColor;
     
