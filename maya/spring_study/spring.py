@@ -1,5 +1,9 @@
 """
 Spring dynamics
+
+To do:
+    - Auto-create locator at object to steer to.
+    - Work with rotations.
 """
 
 import numpy
@@ -22,12 +26,14 @@ class DynamicObj():
         self.obj = obj
         self.parent = parent
         self.max_force = max_force
+        self.max_vel = 2
         
         self.pos = obj_to_vector(obj)
         self.vel = OpenMaya.MVector(0, 0, 0)
         self.acc = OpenMaya.MVector(0, 0, 0)
     
     def move(self):
+        # Figure out how much force it should use.
         dist_threshold = 20
         
         end_pos = obj_to_vector(self.parent)
@@ -36,6 +42,7 @@ class DynamicObj():
         
         force = map(min(distance, dist_threshold), 0, dist_threshold, 0, self.max_force)
         
+        # Move towards target.
         push = obj_to_vector(self.parent)
         push -= self.pos
         push.normalize()
@@ -44,6 +51,12 @@ class DynamicObj():
         
         self.vel *= 0.9
         
+        # Limit velocity.
+        if self.vel.length() > self.max_vel:
+            self.vel.normalize()
+            self.vel *= self.max_vel
+        
+        # Move it.
         self.vel += self.acc
         self.pos += self.vel
         self.acc *= 0
@@ -64,5 +77,5 @@ def sim(dyn_obj, start_frame, end_frame, steps=1):
             dyn_obj.update_obj()
 
 
-dyn_obj = DynamicObj("pSphere1", "pCube1", 5)
-sim(dyn_obj, 1, 100, steps=1)
+dyn_obj = DynamicObj("pCone1", "locator1", 5)
+sim(dyn_obj, 1, 300, steps=1)
